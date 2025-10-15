@@ -24,18 +24,18 @@ Route::get('/', function () {
 
 // Grupo principal con autenticación y verificación
 Route::middleware(['auth', 'verified'])->group(function () {
-    
-    
-    
-    // --- Plan del cliente ---
-Route::get('/my-plan', [ClientPlanController::class, 'myPlan'])
-    ->name('client.plan')
-    ->middleware('role:client,admin');
 
-// --- Planes del administrador ---
-Route::get('/my-plan-admin', [ClientPlanController::class, 'myPlanAdmin'])
-    ->name('admin.plan')
-    ->middleware('role:admin');
+
+
+//    // --- Plan del cliente ---
+//Route::get('/my-plan', [ClientPlanController::class, 'myPlan'])
+//    ->name('client.plan')
+//    ->middleware('role:client,admin');
+//
+//// --- Planes del administrador ---
+//Route::get('/my-plan-admin', [ClientPlanController::class, 'myPlanAdmin'])
+//    ->name('admin.plan')
+//    ->middleware('role:admin');
 
 
     // --- Dashboard principal ---
@@ -46,10 +46,13 @@ Route::get('/my-plan-admin', [ClientPlanController::class, 'myPlanAdmin'])
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // --- Plan del cliente o administrador ---
-    Route::get('/my-plan', [ClientPlanController::class, 'myPlan'])
-        ->name('client.plan')
-        ->middleware('role:admin,client');
+//    // --- Plan del cliente o administrador ---
+//    Route::get('/my-plan', [ClientPlanController::class, 'myPlan'])
+//        ->name('client.plan')
+//        ->middleware('role:admin,client');
+
+    Route::get('my-plans', [ClientPlanController::class, 'myPlans'])
+        ->name('my-plans.index')->middleware('role:client');
 
     // --- Tickets ---
     Route::resource('tickets', TicketController::class);
@@ -64,21 +67,28 @@ Route::get('/my-plan-admin', [ClientPlanController::class, 'myPlanAdmin'])
     // --- Administradores ---
     Route::middleware(['role:admin'])->group(function () {
 
-        // --- Gestión de Planes de Clientes (CRUD completo) ---
-        Route::get('/clientplans', [ClientPlanController::class, 'index'])->name('clientplans.index');
-        Route::get('/clientplans/create', [ClientPlanController::class, 'create'])->name('clientplans.create');
-        Route::post('/clientplans', [ClientPlanController::class, 'store'])->name('clientplans.store');
-        Route::get('/clientplans/{clientplan}', [ClientPlanController::class, 'show'])->name('clientplans.show');
-        Route::get('/clientplans/{clientplan}/edit', [ClientPlanController::class, 'edit'])->name('clientplans.edit');
-        Route::put('/clientplans/{clientplan}', [ClientPlanController::class, 'update'])->name('clientplans.update');
-        Route::delete('/clientplans/{clientplan}', [ClientPlanController::class, 'destroy'])->name('clientplans.destroy');
-
-        // --- Planes (CRUD completo) ---
-        Route::resource('plans', PlanController::class);
-
-        // --- Asignar planes a clientes ---
-        Route::get('clients/{client}/plans', [ClientPlanController::class, 'edit'])->name('clients.plans.edit');
-        Route::put('clients/{client}/plans', [ClientPlanController::class, 'update'])->name('clients.plans.update');
+//        // --- Gestión de Planes de Clientes (CRUD completo) ---
+//        Route::get('/clientplans', [ClientPlanController::class, 'index'])->name('clientplans.index');
+//        Route::get('/clientplans/create', [ClientPlanController::class, 'create'])->name('clientplans.create');
+//        Route::post('/clientplans', [ClientPlanController::class, 'store'])->name('clientplans.store');
+//        Route::get('/clientplans/{clientplan}', [ClientPlanController::class, 'show'])->name('clientplans.show');
+//        Route::get('/clientplans/{clientplan}/edit', [ClientPlanController::class, 'edit'])->name('clientplans.edit');
+//        Route::put('/clientplans/{clientplan}', [ClientPlanController::class, 'update'])->name('clientplans.update');
+//        Route::delete('/clientplans/{clientplan}', [ClientPlanController::class, 'destroy'])->name('clientplans.destroy');
+//
+//        // --- Planes ---
+        Route::resource('plans', PlanController::class)
+            ->except('show')
+            ->names('admin.plans');
+        // --- Asignar plan ---
+        Route::resource('client-plans', ClientPlanController::class)
+            ->parameters(['client-plans' => 'clientPlan'])
+            ->except('show')
+            ->names('admin.client-plans');
+//
+//        // --- Asignar planes a clientes ---
+//        Route::get('clients/{client}/plans', [ClientPlanController::class, 'edit'])->name('clients.plans.edit');
+//        Route::put('clients/{client}/plans', [ClientPlanController::class, 'update'])->name('clients.plans.update');
 
         // --- Categorías ---
         Route::resource('categories', CategoryController::class);

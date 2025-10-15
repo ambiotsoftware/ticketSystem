@@ -6,17 +6,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     /**
-     * •0ä8 Listado de usuarios con filtros y b¨²squeda
+     * ï¿½0ï¿½8 Listado de usuarios con filtros y bï¿½ï¿½squeda
      */
     public function index(Request $request)
     {
         $query = User::query();
 
-        // ”9ä3 Filtro de b¨²squeda (nombre, apellido, correo)
+        // ï¿½9ï¿½3 Filtro de bï¿½ï¿½squeda (nombre, apellido, correo)
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -26,24 +27,24 @@ class UserController extends Controller
             });
         }
 
-        // ”9Á1 Filtro de rol
+        // ï¿½9ï¿½1 Filtro de rol
         if ($request->filled('role')) {
             $query->where('role', $request->input('role'));
         }
 
-        // 7±5„1‚5 Filtro de estado (si existe el campo)
+        // ï¿½7ï¿½5ï¿½1ï¿½5 Filtro de estado (si existe el campo)
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
-        // 7¼3 Paginaci¨®n directa (sin ->get())
+        // ï¿½7ï¿½3 Paginaciï¿½ï¿½n directa (sin ->get())
         $users = $query->paginate(10);
 
         return view('admin.users.index', compact('users'));
     }
 
     /**
-     * •0ß96¤9¡á„1‚5 Mostrar formulario de creaci¨®n
+     * ï¿½0ï¿½9ï¿½6ï¿½9ï¿½ï¿½1ï¿½5 Mostrar formulario de creaciï¿½ï¿½n
      */
     public function create()
     {
@@ -52,7 +53,7 @@ class UserController extends Controller
     }
 
     /**
-     * ”9Ü4 Guardar nuevo usuario
+     * ï¿½9ï¿½4 Guardar nuevo usuario
      */
     public function store(Request $request)
     {
@@ -62,6 +63,12 @@ class UserController extends Controller
             'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:6',
             'role'       => 'required|in:admin,client,technician',
+            'company_name'  => [
+                Rule::requiredIf($request->role === 'client'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ]);
 
         User::create([
@@ -70,13 +77,14 @@ class UserController extends Controller
             'email'      => $validated['email'],
             'password'   => Hash::make($validated['password']),
             'role'       => UserRole::from($validated['role']),
+            'company_name' => $validated['company_name'] ?? null,
         ]);
 
         return redirect()->route('users.index')->with('success', 'Usuario creado correctamente.');
     }
 
     /**
-     * 7½3„1‚5 Mostrar formulario de edici¨®n
+     * ï¿½7ï¿½3ï¿½1ï¿½5 Mostrar formulario de ediciï¿½ï¿½n
      */
     public function edit($id)
     {
@@ -86,7 +94,7 @@ class UserController extends Controller
     }
 
     /**
-     * ”9ã4 Actualizar usuario
+     * ï¿½9ï¿½4 Actualizar usuario
      */
     public function update(Request $request, $id)
     {
@@ -98,6 +106,12 @@ class UserController extends Controller
             'email'      => 'required|email|unique:users,email,' . $user->id,
             'password'   => 'nullable|min:6',
             'role'       => 'required|in:admin,client,technician',
+            'company_name'  => [
+                Rule::requiredIf($request->role === 'client'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ]);
 
         $user->first_name = $validated['first_name'];
@@ -109,13 +123,15 @@ class UserController extends Controller
             $user->password = Hash::make($validated['password']);
         }
 
+        $user->company_name = $validated['company_name'] ?? null;
+
         $user->save();
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
     /**
-     * ”9÷9„1‚5 Eliminar usuario
+     * ï¿½9ï¿½9ï¿½1ï¿½5 Eliminar usuario
      */
     public function destroy($id)
     {

@@ -39,7 +39,7 @@
                 <h2 style="margin: 0;">Tickets Recientes</h2>
                 <a href="{{ route('tickets.create') }}" class="btn">+ Nuevo Ticket</a>
             </div>
-            
+
             @if($recent_tickets->count() > 0)
                 <table>
                     <thead>
@@ -88,18 +88,18 @@
             @endif
         </div>
     </div>
-    
+
     <div class="col-4">
         <div class="card">
             <h3 style="margin-top: 0;">Acciones Rápidas</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 <a href="{{ route('tickets.create') }}" class="btn">📝 Crear Ticket</a>
                 <a href="{{ route('tickets.index') }}" class="btn secondary">📋 Estado del Ticket</a>
-                <a href="{{ route('client.plan') }}" class="btn secondary">📊 Mi Plan/Servicio Contratado</a>
+                <a href="{{ route('my-plans.index') }}" class="btn secondary">📊 Mi Plan/Servicio Contratado</a>
                 <a href="{{ route('profile.edit') }}" class="btn secondary">👤 Mi Perfil</a>
             </div>
         </div>
-        
+
         @if(auth()->user()->logo_path)
             <div class="card">
                 <h3 style="margin-top: 0;">Logo de tu Empresa</h3>

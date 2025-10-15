@@ -2,68 +2,81 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BillingCycleEnum;
+use App\Http\Requests\PlanRequest;
 use App\Models\Plan;
-use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
     public function index()
     {
-        $plans = Plan::all();
-        return view('plans.index', compact('plans'));
+        $queryPlan  = Plan::query();
+
+        if (request()->filled('search')) {
+            $search = request()->input('search');
+            $queryPlan->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        $plans = $queryPlan->paginate();
+
+        return view('admin.plans.index', [
+            'plans' => $plans
+        ]);
     }
 
     public function create()
     {
-        return view('plans.create');
+        $plan = new Plan;
+
+        $billingCycle = BillingCycleEnum::pluck();
+
+        return view('admin.plans.create', [
+            'plan' => $plan,
+            'billingCycle' => $billingCycle
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(PlanRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required',
-            'description' => 'nullable',
-            'hours_included' => 'required|integer',
-            'plan_cost' => 'required|numeric',
-            'extra_hour_rate' => 'required|numeric',
-            'billing_cycle' => 'required',
-            'active' => 'boolean'
-        ]);
+        Plan::create($request->validated());
 
-        Plan::create($validated);
-        return redirect()->route('plans.index')->with('success', 'Plan creado exitosamente.');
+        return redirect()->route('admin.plans.index')
+            ->with('success', 'Plan creado exitosamente.');
     }
 
     public function show(Plan $plan)
     {
-        return view('plans.show', compact('plan'));
+        return view('admin.plans.show', [
+            'plan' => $plan
+        ]);
     }
 
     public function edit(Plan $plan)
     {
-        return view('plans.edit', compact('plan'));
+        $billingCycle = BillingCycleEnum::pluck();
+
+        return view('admin.plans.edit', [
+            'plan' => $plan,
+            'billingCycle' => $billingCycle
+        ]);
     }
 
-    public function update(Request $request, Plan $plan)
+    public function update(PlanRequest $request, Plan $plan)
     {
-        $validated = $request->validate([
-            'name' => 'required',
-            'description' => 'nullable',
-            'hours_included' => 'required|integer',
-            'plan_cost' => 'required|numeric',
-            'extra_hour_rate' => 'required|numeric',
-            'billing_cycle' => 'required',
-            'active' => 'boolean'
-        ]);
+        $plan->update($request->validated());
 
-        $plan->update($validated);
-        return redirect()->route('plans.index')->with('success', 'Plan actualizado correctamente.');
+        return redirect()->route('admin.plans.index')
+            ->with('success', 'Plan actualizado correctamente.');
     }
 
     public function destroy(Plan $plan)
     {
         $plan->delete();
-        return redirect()->route('plans.index')->with('success', 'Plan eliminado correctamente.');
+
+        return redirect()->route('admin.plans.index')
+            ->with('success', 'Plan eliminado correctamente.');
     }
 }
 

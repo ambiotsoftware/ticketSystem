@@ -100,7 +100,8 @@
                 <a href="{{ route('profile.edit') }}" class="btn secondary">👤 Mi Perfil</a>
                 <a href="{{ route('users.create') }}" class="btn secondary">👥 Registrar Usuario</a>
                 <a href="https://helpdesk.networksmayan.com/users" class="btn secondary" target="_blank">🔍 Consultar Usuarios</a>
-                <a href="{{ route('client.plan') }}" class="btn btn-secondary w-100 mb-2">📦 Consultar Planes</a>
+                <a href="{{ route('admin.plans.index') }}" class="btn secondary">👥 Registrar Plan</a>
+                <a href="{{ route('admin.client-plans.index') }}" class="btn secondary">📦 Asignar Planes</a>
 
 
             </div>

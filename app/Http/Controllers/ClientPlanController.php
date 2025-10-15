@@ -2,91 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
-use App\Models\Plan;
+use App\Http\Requests\ClientPlanRequest;
 use App\Models\ClientPlan;
-use Illuminate\Http\Request;
+use App\Models\Plan;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class ClientPlanController extends Controller
 {
-    // Mostrar formulario para asignar planes a un cliente
-    public function edit($clientId)
-    {
-        $client = Client::findOrFail($clientId);
-        $plans = Plan::where('active', 1)->get(); // solo planes activos
-        $assignedPlans = $client->plans->pluck('id')->toArray();
-
-        return view('client_plans.edit', compact('client', 'plans', 'assignedPlans'));
-    }
-
-    // Listado general de clientes con planes
     public function index()
     {
-        $clients = Client::with('plans')->get();
-        return view('client_plans.index', compact('clients'));
-    }
+        $clientPlanQuery = ClientPlan::with(['user', 'plan']);
 
-    // Guardar planes asignados al cliente
-    public function update(Request $request, $clientId)
-    {
-        $client = Client::findOrFail($clientId);
+        if (request()->filled('search')) {
+            $search = request()->input('search');
+            $clientPlanQuery->whereHas('user', function (Builder $query) use ($search) {
+                $sql = "CONCAT(first_name,' ',last_name)  like ?";
+                $query->whereRaw($sql, ["%{$search}%"]);
+            });
+        }
 
-        $request->validate([
-            'plans' => 'array', // puede ser vacío si desasignas todos
-            'plans.*' => 'exists:plans,id'
+        $clientPlans = $clientPlanQuery->paginate();
+
+        return view('admin.client-plans.index', [
+            'clientPlans' => $clientPlans,
         ]);
-
-        $client->plans()->sync($request->plans ?? []);
-
-        return redirect()->route('clients.index')->with('success', 'Planes asignados correctamente');
     }
 
-    // Mostrar planes asignados según rol
-    public function myPlan()
+    public function create()
+    {
+        $clientPlan = new  ClientPlan;
+        $clients = User::activeClients()->get();
+        $plans = Plan::where('active', 1)->get();
+
+        return view('admin.client-plans.create', [
+            'clientPlan' => $clientPlan,
+            'clients' => $clients,
+            'plans' => $plans
+        ]);
+    }
+
+    public function store(ClientPlanRequest $request)
+    {
+        ClientPlan::create($request->validated());
+
+        return redirect()->route('admin.client-plans.index')
+            ->with('success', 'Plan asignado exitosamente.');
+    }
+
+    public function edit(ClientPlan $clientPlan)
+    {
+        $clients = User::activeClients()->get();
+        $plans = Plan::where('active', 1)->get();
+
+        return view('admin.client-plans.edit', [
+            'clientPlan' => $clientPlan,
+            'clients' => $clients,
+            'plans' => $plans
+        ]);
+    }
+
+    public function update(ClientPlanRequest $request, ClientPlan $clientPlan)
+    {
+        $clientPlan->update($request->validated());
+
+        return redirect()->route('admin.client-plans.index')
+            ->with('success', 'Plan actualizado con asignado exitosamente.');
+    }
+
+    public function destroy(ClientPlan $clientPlan)
+    {
+        $clientPlan->delete();
+
+        return redirect()->route('admin.client-plans.index')
+            ->with('success', 'Plan removido exitosamente.');
+    }
+
+    public function myPlans()
     {
         $user = auth()->user();
 
-        if (!$user) {
-            return redirect()->route('login')->with('error', 'Debes iniciar sesión para ver tus planes.');
-        }
+        $clientPlanQuery = ClientPlan::where('user_id', $user->id)
+            ->with(['user', 'plan']);
 
-        $role = $user->role->value ?? null;
+        $clientPlans = $clientPlanQuery->paginate();
 
-        // Cliente
-        if ($role === 'client') {
-            $plans = $user->clientPlans()->with('plan')->get();
-
-            if ($plans->isEmpty()) {
-                return view('client_plans.my_plan', [
-                    'plans' => [],
-                    'message' => 'Aún no tienes ningún plan asignado.'
-                ]);
-            }
-
-            return view('client_plans.my_plan', compact('plans'));
-        }
-
-        // Admin
-        if ($role === 'admin') {
-            $plans = ClientPlan::with(['user', 'plan'])->get();
-            return view('client_plans.my_plan_admin', compact('plans'));
-        }
-
-        // Otros roles
-        abort(403, 'No tienes permisos para acceder a esta sección.');
-    }
-
-    // Solo Admin: vista de planes de todos los clientes
-    public function myPlanAdmin()
-    {
-        $user = auth()->user();
-
-        if (!$user || $user->role->value !== 'admin') {
-            abort(403, 'Solo los administradores pueden acceder a esta sección.');
-        }
-
-        $plans = ClientPlan::with(['user', 'plan'])->get();
-        return view('client_plans.my_plan_admin', compact('plans'));
+        return view('my-plan.index', [
+            'clientPlans' => $clientPlans,
+        ]);
     }
 }
 
